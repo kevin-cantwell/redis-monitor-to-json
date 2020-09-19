@@ -8,14 +8,7 @@ import (
 	"strconv"
 )
 
-/*
-1600535204.739027 [0 147.75.98.182:55466] "EVALSHA" "5526dff96b990cafa337d1313ebb81e251cef801" "1" "usage-stats.count-min-sketch-12h.1600516800.lga04" "10000000" "7" "1603108800"
-1600535204.739079 [0 lua] "EXISTS" "usage-stats.count-min-sketch-12h.1600516800.lga04"
-1600535204.739447 [0 147.75.98.182:55466] "EVALSHA" "e0eca3c1ee888a67ac312fef42a3ef8d8b2a595b"
-1257894000.000000
-*/
-
-type Monitor struct {
+type MonitorLog struct {
 	Timestamp int64    `json:"ts_nano"`
 	DB        int      `json:"db"`
 	Source    string   `json:"source"` // IP:PORT | lua
@@ -37,15 +30,17 @@ func main() {
 
 	enc := json.NewEncoder(os.Stdout)
 	for {
-		mon := readMonitor(r)
+		mon := readMonitorLog(r)
 		if err := enc.Encode(mon); err != nil {
 			log.Fatalln(err)
 		}
 	}
 }
 
-func readMonitor(r *reader) Monitor {
-	var mon Monitor
+// parses lines like:
+// <secs>.<micros> [<db> <source>] "<command>" "<arg0>" "<arg1>" ... "<argN>"
+func readMonitorLog(r *reader) MonitorLog {
+	var mon MonitorLog
 	mon.Timestamp = readTimestamp(r)
 	r.read() // ws
 	r.read() // [
@@ -159,5 +154,3 @@ func (r *reader) unread() {
 		log.Fatalln(err)
 	}
 }
-
-var eof = byte(0)
